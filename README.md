@@ -1,5 +1,3 @@
-# Vitalora-Chanel
-Creación de la comunidad Vitalora
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -136,8 +134,15 @@ Creación de la comunidad Vitalora
             background-color: #FAFAFA;
         }
 
-        /* Movimiento y enfoque de los inputs */
-        .form-group input:focus, .form-group textarea:focus {
+        /* Estilo para los campos automáticos deshabilitados */
+        .form-group input[readonly] {
+            background-color: #F3F4F6;
+            color: #6B7280;
+            cursor: not-allowed;
+        }
+
+        /* Movimiento y enfoque de los inputs activos */
+        .form-group input:not([readonly]):focus {
             border-color: var(--primary);
             background-color: var(--white);
             box-shadow: 0 0 8px rgba(217, 119, 6, 0.2);
@@ -164,8 +169,11 @@ Creación de la comunidad Vitalora
             transform: translateY(-2px);
         }
 
-        .btn-submit:active {
-            transform: translateY(1px);
+        .btn-submit:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
         }
 
         /* --- ANIMACIONES --- */
@@ -193,6 +201,7 @@ Creación de la comunidad Vitalora
 </head>
 <body>
 
+    <!-- BARRA DE NAVEGACIÓN -->
     <nav class="navbar">
         <div class="brand">Vita<span>lora</span></div>
         <ul class="nav-links">
@@ -202,6 +211,7 @@ Creación de la comunidad Vitalora
         </ul>
     </nav>
 
+    <!-- CONTENEDOR PRINCIPAL -->
     <div class="container">
         <div class="hero-text">
             <h1>Bienvenido a Vitalora</h1>
@@ -211,57 +221,63 @@ Creación de la comunidad Vitalora
         <div class="form-card" id="contacto">
             <form id="vitaloraForm">
                 
+                <!-- Nombre -->
                 <div class="form-group">
                     <label for="nombre">Nombre</label>
                     <input type="text" id="nombre" name="Nombre" placeholder="Tu nombre completo" required>
                 </div>
 
+                <!-- Fecha de hoy (Autocompletada por JavaScript) -->
                 <div class="form-group">
                     <label for="fechaHoy">Fecha de hoy</label>
                     <input type="text" id="fechaHoy" name="Fecha de hoy" readonly>
                 </div>
 
+                <!-- Día de la Semana (Autocompletado por JavaScript) -->
                 <div class="form-group">
                     <label for="diaSemana">Día de la Semana</label>
                     <input type="text" id="diaSemana" name="Día de la Semana" readonly>
                 </div>
 
+                <!-- Evangelio Video -->
                 <div class="form-group">
                     <label for="evangelioVideo">Evangelio Video (Enlace / Comentario)</label>
                     <input type="url" id="evangelioVideo" name="Evangelio Video" placeholder="https://ejemplo.com/video" required>
                 </div>
 
+                <!-- Evangelio Audio -->
                 <div class="form-group">
                     <label for="evangelioAudio">Evangelio Audio (Enlace / Comentario)</label>
                     <input type="url" id="evangelioAudio" name="Evangelio Audio" placeholder="https://ejemplo.com/audio" required>
                 </div>
 
-                <button type="submit" class="btn-submit">Enviar Registro</button>
+                <!-- Botón de Envío -->
+                <button type="submit" class="btn-submit" id="btnEnviar">Enviar Registro</button>
             </form>
         </div>
     </div>
 
+    <!-- SCRIPT DE INTERACTIVIDAD AUTOMÁTICA Y CONEXIÓN WEBHOOK -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. OBTENER FECHA Y DÍA ACTUAL AUTOMÁTICAMENTE
+            
+            // 1. ASIGNACIÓN AUTOMÁTICA DE FECHA Y DÍA
             const opcionesFecha = { year: 'numeric', month: 'long', day: 'numeric' };
             const opcionesDia = { weekday: 'long' };
-            
             const hoy = new Date();
             
-            // Formatear en español de México
             const fechaFormateada = hoy.toLocaleDateString('es-MX', opcionesFecha);
             let diaFormateada = hoy.toLocaleDateString('es-MX', opcionesDia);
             
-            // Capitalizar la primera letra del día (ej: "jueves" -> "Jueves")
+            // Capitalizar la primera letra del día
             diaFormateada = diaFormateada.charAt(0).toUpperCase() + diaFormateada.slice(1);
 
-            // Asignar valores a los campos correspondientes del JSON
+            // Inyectar valores iniciales fijos
             document.getElementById("fechaHoy").value = fechaFormateada;
             document.getElementById("diaSemana").value = diaFormateada;
 
-            // 2. INTERACTIVIDAD DE ENTRADA EN LOS INPUTS (Efecto focus dinámico adicional)
-            const inputs = document.querySelectorAll(".form-group input");
+            // 2. EFECTOS VISUALES DE MOVIMIENTO EN LOS INPUTS ACTIVOS
+            const inputs = document.querySelectorAll(".form-group input:not([readonly])");
             inputs.forEach(input => {
                 input.addEventListener("focus", () => {
                     input.parentElement.style.transform = "translateX(5px)";
@@ -272,12 +288,18 @@ Creación de la comunidad Vitalora
                 });
             });
 
-            // 3. CAPTURA DEL FORMULARIO EN FORMATO JSON
+            // 3. ENVÍO LÓGICO DE LOS DATOS HACIA EL WEBHOOK
             const formulario = document.getElementById("vitaloraForm");
-            formulario.addEventListener("submit", function(e) {
-                e.preventDefault(); // Evita la recarga de página
+            const botonEnviar = document.getElementById("btnEnviar");
 
-                // Creación del objeto final según la estructura solicitada
+            formulario.addEventListener("submit", function(e) {
+                e.preventDefault(); // Detiene el refresco de página involuntario
+
+                // Modificar estado del botón durante la carga
+                botonEnviar.textContent = "Procesando envío...";
+                botonEnviar.disabled = true;
+
+                // Creación de la estructura JSON idéntica a la solicitada
                 const resultadoJSON = {
                     "Nombre": document.getElementById("nombre").value,
                     "Fecha de hoy": document.getElementById("fechaHoy").value,
@@ -286,16 +308,36 @@ Creación de la comunidad Vitalora
                     "Evangelio Audio": document.getElementById("evangelioAudio").value
                 };
 
-                // Mostrar resultado en consola con animación de éxito
-                console.log("%c¡Datos capturados exitosamente en JSON!", "color: #D97706; font-weight: bold; font-size: 1.2rem;");
-                console.log(JSON.stringify(resultadoJSON, null, 4));
-                
-                alert("¡Datos enviados correctamente! Revisa la consola del navegador para ver la estructura JSON generada.");
-                formulario.reset();
-                
-                // Mantener los campos automáticos fijos después del reset
-                document.getElementById("fechaHoy").value = fechaFormateada;
-                document.getElementById("diaSemana").value = diaFormateada;
+                // URL del Webhook de Make (Reemplaza con el tuyo propio)
+                const urlWebhook = "AQUÍ_PEGA_TU_URL_DE_WEBHOOK"; 
+
+                // Ejecución del envío mediante Fetch API
+                fetch(urlWebhook, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(resultadoJSON)
+                })
+                .then(respuesta => {
+                    if(respuesta.ok || respuesta.status === 200) {
+                        alert("¡Datos enviados con éxito al Webhook de Make!");
+                        formulario.reset();
+                    } else {
+                        alert("El servidor Webhook recibió los datos pero devolvió un error de procesamiento.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error al enviar:", error);
+                    alert("Hubo un error de conexión al enviar al Webhook. Revisa la URL asignada.");
+                })
+                .finally(() => {
+                    // Restablecer el estado del botón y recuperar campos de fecha/día automáticos
+                    botonEnviar.textContent = "Enviar Registro";
+                    botonEnviar.disabled = false;
+                    document.getElementById("fechaHoy").value = fechaFormateada;
+                    document.getElementById("diaSemana").value = diaFormateada;
+                });
             });
         });
     </script>
